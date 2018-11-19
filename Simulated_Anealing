@@ -1,0 +1,225 @@
+# -*- coding: utf-8 -*-
+"""
+@author: Zhiyong Deng/Neil Teng
+@Licen: GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
+"""
+import numpy as np
+import copy as cp
+import time
+
+class Simulated_Anealing:
+
+    def __init__(self, data=None, T0=5000.0, T_end=1e-8, alpha=0.98, epoch=10, MaxInt=1e7, re_heat_prop=0.10, re_heat_percent=0.05, decay_factor=500):
+        """
+        data: import data matrix, if None raise error
+        T0: initial temperature to start the algorithms
+        T_end: the temperature to stop the algorithms
+        alpha: temperature decay rate
+        epoch: repeatably create number of epoch of new path under current states and keep the best
+        MaxInt: the number of iteration allowed.
+        re_heat_prop: the probability to get the current temperature up after annealing.
+        decay_factor: for new path generator, the bigger the less path generated during each generation.
+        """
+        np.random.seed(1)
+
+        self.data = data
+        self.T0 = T0
+        self.T_end = T_end
+        self.alpha = alpha
+        self.epoch = epoch
+        self.MaxInt = MaxInt
+        self.re_heat_prop = re_heat_prop
+        self.path_len=data.shape[0]
+        self.re_heat_percent = re_heat_percent
+        self.decay_factor=decay_factor
+
+    def cost_compute(self, path):
+        """
+        :param path: list
+        :return float
+        """
+        cost=0.0
+        for i in range(self.path_len-1):
+            cost+=self.data[path[i]][path[i+1]]
+        return cost+self.data[path[-1]][path[0]]
+
+    def new_path_generator(self, T_cur, path_cur):
+        """
+        we do exchange of 2 nodes according to current temperature.
+        :param path_cur: list
+
+        new path and cost of the new path
+        :return: list， float
+        """
+        path_new = cp.deepcopy(path_cur)
+        for j in range(1 + int(T_cur / self.decay_factor)):
+            a, b = np.random.randint(0, self.path_len), np.random.randint(0, self.path_len)
+            path_new[a], path_new[b] = path_cur[b], path_cur[a]
+            path_cur= cp.deepcopy(path_new)
+        return path_new, self.cost_compute(path_new)
+
+    def initial_path(self, random_time=10):
+        """
+        we do exchange of 2 nodes according to current temperature.
+
+        generate number of random_time of random initial path and keep the best.
+        :param random_time: int
+
+        new path and cost of the new path
+        :return: list， float
+        """
+        best_path=np.random.permutation(self.path_len)
+        for i in range(random_time):
+            path_cur = np.random.permutation(self.path_len)
+            cost_cur = self.cost_compute(path_cur)
+            cost_best= self.cost_compute(best_path)
+            if cost_cur<cost_best:
+                best_path=path_cur
+                cost_best=cost_cur
+        return best_path, cost_best
+
+    def solve(self,random_time=10, verbose=False, check_point=False, filename=None):
+        """
+        Run the simulated .
+
+        Generate number of random_time of random initial path and keep the best.
+        :param random_time: int
+        If verbose==True, we print the number of current step, the current best cost and current best path
+        :param verbose: Boolean
+        If check_point==True, we save the all the parameter and the number of current step, the current best cost and current best path per 10 step.
+        :param check_point: Boolean
+        new path, cost of the new path and run time.
+        :return: list，float, float
+        """
+        t=self.T0
+        path_cur, cost_cur=self.initial_path(random_time)
+        cost_best=float('inf')
+        path_best=[]
+        tik=time.time()
+        step=0
+        while t > self.T_end:
+            for _ in np.arange(self.epoch):
+                path_new, cost_new=self.new_path_generator(t, path_cur)
+
+                if cost_new < cost_cur:  # accept the new path
+                    #  renew solutioncurrent and solutionbest
+                    cost_cur = cost_new
+                    path_cur = cp.deepcopy(path_new)
+
+                    ## keep the best solution
+                    if cost_best > cost_cur:
+                        cost_best = cost_cur
+                        path_best = cp.deepcopy(path_cur)
+
+                else:  # accept the new path with curtain probability
+                    if np.random.rand() < np.exp(-(cost_new - cost_cur) / t):
+                        cost_cur = cost_new
+                        path_cur = cp.deepcopy(path_new)
+
+                t = self.alpha * t
+                if np.random.rand() < self.re_heat_prop:
+                    t = t * (1+self.re_heat_percent)
+            step += 1
+            if verbose:
+                print 'step: ', step
+                print "cost_best: ", cost_best
+                print "path_best: ", path_best
+                print 'temperature: ', t
+            if check_point:
+                if step%20==0:
+                    with open(filename+'check_point.cp','w') as f:
+                        # f.write('self.data ' + str(self.data) + '\n')
+                        f.write('self.T0 ' + str(t) + '\n')
+                        f.write('self.T_end ' + str(self.T_end) + '\n')
+                        f.write('self.alpha ' + str(self.alpha) + '\n')
+                        f.write('self.epoch ' + str(self.epoch) + '\n')
+                        f.write('self.MaxInt ' + str(self.MaxInt-step) + '\n')
+                        f.write('self.re_heat_prop ' + str(self.re_heat_prop) + '\n')
+                        f.write('self.path_len ' + str(self.path_len) + '\n')
+                        f.write('self.re_heat_percent ' + str(self.re_heat_percent) + '\n')
+                        f.write('verbose ' + str(verbose) + '\n')
+                        f.write('time ' + str(time.time()-tik) + '\n')
+                        f.write('cost_best ' + str(cost_best) + '\n')
+                        path_best=map(str,path_best)
+                        f.write(' '.join(path_best) + '\n')
+                        f.write('self.decay_factor ' + str(self.decay_factor) + '\n')
+            if step>self.MaxInt:
+                break
+        toc = time.time()
+        return path_best, cost_best, toc-tik
+
+    def resume(self, check_point_file, check_point=True):
+        with open(check_point_file,'r') as f:
+            file=f.readlines()
+
+        t = file[0].split()[1]
+        self.T_end = file[1].split()[1]
+        self.alpha = file[2].split()[1]
+        self.epoch = file[3].split()[1]
+        self.MaxInt = file[4].split()[1]
+        self.re_heat_prop = file[5].split()[1]
+        self.path_len = file[6].split()[1]
+        self.re_heat_percent = file[7].split()[1]
+        verbose=file[8].split()[1]
+        time_cur=file[9].split()[1]
+        cost_best=file[10].split()[1]
+        path_best=map(int,file[11].split())
+        self.decay_factor=file[12].split()[1]
+        assert self.path_len == self.data.shape[0],'Imported Data is NOT Matched.'
+
+        tik = time.time()-time_cur
+        step = 0
+        path_cur=path_best
+        cost_cur=cost_best
+        while t > self.T_end:
+            for _ in np.arange(self.epoch):
+                path_new, cost_new = self.new_path_generator(self, t, path_cur)
+
+                if cost_new < cost_cur:  # accept the new path
+                    #  renew solutioncurrent and solutionbest
+                    cost_cur = cost_new
+                    path_cur = cp.deepcopy(path_new)
+
+                    ## keep the best solution
+                    if cost_best > cost_cur:
+                        cost_best = cost_cur
+                        path_best = cp.deepcopy(path_cur)
+
+                else:  # accept the new path with curtain probability
+                    if np.random.rand() < np.exp(-(cost_new - cost_cur) / t):
+                        cost_cur = cost_new
+                        path_cur = cp.deepcopy(path_new)
+
+                t = self.alpha * t
+                if np.random.rand() < self.re_heat_prop:
+                    t = t * (1 + self.re_heat_percent)
+            step += 1
+            if verbose:
+                print 'step: ', step
+                print "cost_best: ", cost_best
+                print "path_best: ", path_best
+                print 'temperature: ', t
+            if check_point:
+                if step % 20 == 0:
+                    with open(check_point_file, 'w') as f:
+                        f.write('self.T0 ' + str(t) + '\n')
+                        f.write('self.T_end ' + str(self.T_end) + '\n')
+                        f.write('self.alpha ' + str(self.alpha) + '\n')
+                        f.write('self.epoch ' + str(self.epoch) + '\n')
+                        f.write('self.MaxInt ' + str(self.MaxInt - step) + '\n')
+                        f.write('self.re_heat_prop ' + str(self.re_heat_prop) + '\n')
+                        f.write('self.path_len ' + str(self.path_len) + '\n')
+                        f.write('self.re_heat_percent ' + str(self.re_heat_percent) + '\n')
+                        f.write('verbose ' + str(verbose) + '\n')
+                        f.write('time ' + str(time.time()) + '\n')
+                        f.write('cost_best ' + str(cost_best) + '\n')
+                        path_best = map(str, path_best)
+                        f.write(' '.join(path_best) + '\n')
+                        f.write('self.decay_factor ' + str(self.decay_factor) + '\n')
+            if step > self.MaxInt:
+                break
+        toc = time.time()
+        return path_best, cost_best, toc - tik
+
+
+
