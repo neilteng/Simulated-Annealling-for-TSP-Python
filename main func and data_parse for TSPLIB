@@ -35,28 +35,3 @@ def getdis(input_file):
   return value
 
 ##value is a matrix saving the distance of each pair of nodes
-
-if __name__=='__main__':
-    os.chdir('/Users/karlie/PycharmProjects/2.7/6140proj/data/')
-    files=commands.getoutput('ls *.tsp')
-    for file in files.split():
-        data=getdis(file)
-        sa = SA.Simulated_Anealing(data=data, T0=5000000000.0, T_end=1e-7, alpha=0.99, epoch=50, MaxInt=1e6,
-                               re_heat_prop=0.15, re_heat_percent=0.15, decay_factor=5000)
-        path_best, cost_best, time=sa.solve(verbose=False, check_point=True, filename=file)
-        # print path_best, cost_best, time
-        with open('result.txt','a+') as f:
-            print 'done'
-            f.write(str(file)+' '+str(time)+' '+str(cost_best)+' '+str(path_best)+'\n')
-
-
-    # data = getdis('./data/Cincinnati.tsp')
-    # sa = SA.Simulated_Anealing(data=data, T0=50000000.0, T_end=1e-7, alpha=0.99, epoch=50, MaxInt=1e7, re_heat_prop=0.10,
-    #                            re_heat_percent=0.05, decay_factor=5000)
-    # path_best, cost_best, time = sa.solve(verbose=True, check_point=True, filename='Cincinnati.tsp')
-    # print time
-
-    # data = getdis('./data/Boston.tsp')
-    # sa = SA.Simulated_Anealing(data=data, T0=500000000.0, T_end=1e-7, alpha=0.99, epoch=50, MaxInt=1e7, re_heat_prop=0.10,
-    #                                re_heat_percent=0.05, decay_factor=50000)
-    # path_best, cost_best, time = sa.solve(verbose=True, check_point=True, filename='Boston.tsp')
