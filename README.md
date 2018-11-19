@@ -11,4 +11,4 @@ Python with check point and decay rate on all the possible parameter.
         epoch: repeatably create number of epoch of new path under current states and keep the best
         MaxInt: the number of iteration allowed.
         re_heat_prop: the probability to get the current temperature up after annealing.
-        decay_factor: for new path generator, the bigger the less path generated during each generation.
+        decay_factor: for new path generator, the bigger the lesser path generated during each generation.
