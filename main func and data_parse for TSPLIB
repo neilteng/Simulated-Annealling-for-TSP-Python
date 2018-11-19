@@ -1,0 +1,62 @@
+import numpy as np
+import geo_dis_parse as gdp
+import Simulated_Annealing as SA
+import commands
+import os
+
+def getdis(input_file):
+  with open(input_file) as file:
+      data = file.readlines()
+      for i in range(len(data)):
+          head = data[i].split(' ')
+          if head[0]=="EDGE_WEIGHT_TYPE:":
+              Dformat = head[1]
+          if head[0]=="DIMENSION:":
+              Di = int(head[1])
+          if data[i]=="NODE_COORD_SECTION\n":
+              space=i
+              break
+
+      if Dformat=="EUC_2D\n":
+          value=np.zeros((Di,Di))
+          for i in range(Di):
+              line=data[1+space+i].split(' ')
+              for j in range(Di):
+                  line0=data[1+space+j].split(' ')
+                  value[i][j]=np.sqrt((float(line[1])-float(line0[1]))**2+(float(line[2])-float(line0[2]))**2)
+      else:
+          value = np.zeros((Di, Di))
+          GtU=np.zeros((Di,2))
+          for i in range(Di):
+              line=data[1+space+i].split(' ')
+              GtU[i,0]=float(line[2])
+              GtU[i,1]=float(line[3])
+          value=gdp.geo_data_parse(GtU)
+  return value
+
+##value is a matrix saving the distance of each pair of nodes
+
+if __name__=='__main__':
+    os.chdir('/Users/karlie/PycharmProjects/2.7/6140proj/data/')
+    files=commands.getoutput('ls *.tsp')
+    for file in files.split():
+        data=getdis(file)
+        sa = SA.Simulated_Anealing(data=data, T0=5000000000.0, T_end=1e-7, alpha=0.99, epoch=50, MaxInt=1e6,
+                               re_heat_prop=0.15, re_heat_percent=0.15, decay_factor=5000)
+        path_best, cost_best, time=sa.solve(verbose=False, check_point=True, filename=file)
+        # print path_best, cost_best, time
+        with open('result.txt','a+') as f:
+            print 'done'
+            f.write(str(file)+' '+str(time)+' '+str(cost_best)+' '+str(path_best)+'\n')
+
+
+    # data = getdis('./data/Cincinnati.tsp')
+    # sa = SA.Simulated_Anealing(data=data, T0=50000000.0, T_end=1e-7, alpha=0.99, epoch=50, MaxInt=1e7, re_heat_prop=0.10,
+    #                            re_heat_percent=0.05, decay_factor=5000)
+    # path_best, cost_best, time = sa.solve(verbose=True, check_point=True, filename='Cincinnati.tsp')
+    # print time
+
+    # data = getdis('./data/Boston.tsp')
+    # sa = SA.Simulated_Anealing(data=data, T0=500000000.0, T_end=1e-7, alpha=0.99, epoch=50, MaxInt=1e7, re_heat_prop=0.10,
+    #                                re_heat_percent=0.05, decay_factor=50000)
+    # path_best, cost_best, time = sa.solve(verbose=True, check_point=True, filename='Boston.tsp')
