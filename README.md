@@ -1,4 +1,4 @@
-# Simulated-Annealling-for-TSP-Python-
+# Simulated-Annealling-for-TSP-Python
 Python with check point and decay rate on all the possible parameter.
 
 
