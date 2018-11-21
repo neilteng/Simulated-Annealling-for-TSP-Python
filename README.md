@@ -1,12 +1,9 @@
 # Simulated-Annealling-for-TSP-Python
 Python with check point and decay rate on all the possible parameter.
 
-"""
-sa = SA.Simulated_Anealing(data=data, T0=5e10, T_end=1e-8, alpha=0.99, epoch=50, MaxInt=1e6,
+            sa = SA.Simulated_Anealing(data=data, T0=5e10, T_end=1e-8, alpha=0.99, epoch=50, MaxInt=1e6,
                                    re_heat_prop=0.1, re_heat_percent=0.10, portion_factor=0)
-path_best, cost_best, time=sa.solve(verbose=False, check_point=False, filename=file)
-
-"""
+            path_best, cost_best, time=sa.solve(verbose=False, check_point=False, filename=file)
 
         data: import data matrix, if None raise error
         T0: initial temperature to start the algorithms
