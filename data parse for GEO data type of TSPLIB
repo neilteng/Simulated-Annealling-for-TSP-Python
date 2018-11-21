@@ -3,15 +3,12 @@ import numpy as np
 def geo_data_parse(data):
     ## take the floor of the x and y coordinates. Do not round to nearest integer.
     ## lat_log[0] is latitude; lat_log[1] is logtitude
-    PI_=3.14159
+    # PI_=3.14159
     data=np.array(data)
-    deg=np.floor(data)
+    deg = data.astype(int)
     min=data-deg
-    lat_log=PI_*(deg+5.0*min/3.0)/180.0
-    # deg=floor(y[i])
-    # min=y[i]-deg
-    # logtitude[i]=PI_*(deg+5.0*min/3.0)/180.0
 
+    lat_log=np.pi*(deg+5.0*min/3.0)/180.0
 
     ## this formula rounds the distance to the nearest integer.
     RRR=6378.388
@@ -26,11 +23,6 @@ def geo_data_parse(data):
                     q1=np.cos(lat_log[i][1]-lat_log[j][1])
                     q2=np.cos(lat_log[i][0]-lat_log[j][0])
                     q3=np.cos(lat_log[i][0]+lat_log[j][0])
-                    adj[i,j]=round(RRR*np.arccos(0.5*((1.0+q1)*q2-(1.0-q1)*q3))+1.0)
+                    adj[i, j] = (RRR * np.arccos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) + 1.0).astype(int)
                     adj[j, i]=adj[i,j]
-    # q1=np.cos(logtitude[i]-logtitude[j])
-    # q2=np.cos(latitude[i]-latitude[j])
-    # q3=np.cos(latitude[i]+latitude[j])
-    # adj[i,j]=round(RRR*np.arccos(0.5*((1.0+q1)*q2-(1.0-q1)*q3))+1.0)
-
-
+    return adj
