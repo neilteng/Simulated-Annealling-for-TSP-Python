@@ -2,7 +2,9 @@
 Python with check point and decay rate on all the possible parameter.
 
 
-    def __init__(self, data=None, T0=5000.0, T_end=1e-8, alpha=0.98, epoch=10, MaxInt=1e7, re_heat_prop=0.10, re_heat_percent=0.05, decay_factor=500):
+sa = SA.Simulated_Anealing(data=data, T0=5e10, T_end=1e-8, alpha=0.99, epoch=50, MaxInt=1e6,
+                                   re_heat_prop=0.1, re_heat_percent=0.10, portion_factor=0)
+path_best, cost_best, time=sa.solve(verbose=False, check_point=False, filename=file):
         """
         data: import data matrix, if None raise error
         T0: initial temperature to start the algorithms
@@ -11,4 +13,4 @@ Python with check point and decay rate on all the possible parameter.
         epoch: repeatably create number of epoch of new path under current states and keep the best
         MaxInt: the number of iteration allowed.
         re_heat_prop: the probability to get the current temperature up after annealing.
-        decay_factor: for new path generator, the bigger the lesser path generated during each generation.
+        portion_factor: for new path generator, the bigger the more path generated during each generation.
