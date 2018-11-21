@@ -22,5 +22,6 @@ MaxInt: the number of iteration allowed.
 re_heat_prop: the probability to get the current temperature up after annealing.
 
 portion_factor: for new path generator, the bigger the more path generated during each generation.
+
 ---------
 
