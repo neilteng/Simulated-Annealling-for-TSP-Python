@@ -9,7 +9,7 @@ import time
 
 class Simulated_Anealing:
 
-    def __init__(self, data=None, T0=5000.0, T_end=1e-8, alpha=0.98, epoch=10, MaxInt=1e7, re_heat_prop=0.10, re_heat_percent=0.05, decay_factor=500):
+    def __init__(self, data=None, T0=5000.0, T_end=1e-8, alpha=0.98, epoch=10, MaxInt=1e7, re_heat_prop=0.10, re_heat_percent=0.05, portion_factor=0.1):
         """
         data: import data matrix, if None raise error
         T0: initial temperature to start the algorithms
@@ -18,9 +18,9 @@ class Simulated_Anealing:
         epoch: repeatably create number of epoch of new path under current states and keep the best
         MaxInt: the number of iteration allowed.
         re_heat_prop: the probability to get the current temperature up after annealing.
-        decay_factor: for new path generator, the bigger the less path generated during each generation.
+        portion_factor: for new path generator, the bigger the less path generated during each generation.
         """
-        np.random.seed(1)
+        # np.random.seed(1)
 
         self.data = data
         self.T0 = T0
@@ -31,7 +31,7 @@ class Simulated_Anealing:
         self.re_heat_prop = re_heat_prop
         self.path_len=data.shape[0]
         self.re_heat_percent = re_heat_percent
-        self.decay_factor=decay_factor
+        self.portion_factor=portion_factor
 
     def cost_compute(self, path):
         """
@@ -52,7 +52,7 @@ class Simulated_Anealing:
         :return: list， float
         """
         path_new = cp.deepcopy(path_cur)
-        for j in range(1 + int(T_cur / self.decay_factor)):
+        for j in range(1 + int(T_cur * self.portion_factor)):
             a, b = np.random.randint(0, self.path_len), np.random.randint(0, self.path_len)
             path_new[a], path_new[b] = path_cur[b], path_cur[a]
             path_cur= cp.deepcopy(path_new)
@@ -142,11 +142,12 @@ class Simulated_Anealing:
                         f.write('cost_best ' + str(cost_best) + '\n')
                         path_best=map(str,path_best)
                         f.write(' '.join(path_best) + '\n')
-                        f.write('self.decay_factor ' + str(self.decay_factor) + '\n')
+                        f.write('self.portion_factor ' + str(self.portion_factor) + '\n')
             if step>self.MaxInt:
                 break
         toc = time.time()
         return path_best, cost_best, toc-tik
+
 
     def resume(self, check_point_file, check_point=True):
         with open(check_point_file,'r') as f:
@@ -164,7 +165,7 @@ class Simulated_Anealing:
         time_cur=file[9].split()[1]
         cost_best=file[10].split()[1]
         path_best=map(int,file[11].split())
-        self.decay_factor=file[12].split()[1]
+        self.portion_factor=file[12].split()[1]
         assert self.path_len == self.data.shape[0],'Imported Data is NOT Matched.'
 
         tik = time.time()-time_cur
@@ -215,11 +216,8 @@ class Simulated_Anealing:
                         f.write('cost_best ' + str(cost_best) + '\n')
                         path_best = map(str, path_best)
                         f.write(' '.join(path_best) + '\n')
-                        f.write('self.decay_factor ' + str(self.decay_factor) + '\n')
+                        f.write('self.portion_factor ' + str(self.portion_factor) + '\n')
             if step > self.MaxInt:
                 break
         toc = time.time()
         return path_best, cost_best, toc - tik
-
-
-
